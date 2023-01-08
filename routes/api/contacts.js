@@ -1,6 +1,7 @@
 const express = require('express')
 const Joi = require('joi')
 const { createError } = require('../../helpers')
+const authorize = require('../../middlewares/authorize')
 const Contact = require('../../models/contacts')
 
 const router = express.Router()
@@ -29,7 +30,7 @@ const updateFavoriteSchema = Joi.object({
 })
 
 
-router.get('/', async (req, res, next) => {
+router.get('/', authorize, async (req, res, next) => {
   try {
     const result = await Contact.find({}, 'name email phone');
     return res.status(200).json(result)
@@ -38,7 +39,7 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-router.get('/:contactId', async (req, res, next) => {
+router.get('/:contactId', authorize, async (req, res, next) => {
   try {
     const contactId = req.params.contactId;
     const result = await Contact.findById(contactId);
@@ -51,7 +52,7 @@ router.get('/:contactId', async (req, res, next) => {
   }
 })
 
-router.post('/', async (req, res, next) => { 
+router.post('/', authorize, async (req, res, next) => { 
   try {
     const { error } = await schemaContact.validateAsync(req.body);
     if (error) {
@@ -67,7 +68,7 @@ router.post('/', async (req, res, next) => {
   }
 })
 
-router.delete('/:contactId', async (req, res, next) => {
+router.delete('/:contactId', authorize, async (req, res, next) => {
   try {
     const contactId = req.params.contactId
     const result = await Contact.findByIdAndRemove(contactId);
@@ -80,7 +81,7 @@ router.delete('/:contactId', async (req, res, next) => {
   }
 })
 
-router.put('/:contactId', async (req, res, next) => {
+router.put('/:contactId', authorize, async (req, res, next) => {
     const contactId = req.params.contactId
     const userRequest = await req.body
    try {
@@ -98,7 +99,7 @@ router.put('/:contactId', async (req, res, next) => {
   }
 })
 
-router.patch('/:contactId/favorite', async (req, res, next) => {
+router.patch('/:contactId/favorite', authorize, async (req, res, next) => {
   try {
     const contactId = req.params.contactId;
     const { error } = await updateFavoriteSchema.validateAsync(req.body);
