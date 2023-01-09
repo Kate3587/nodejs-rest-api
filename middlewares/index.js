@@ -1,3 +1,3 @@
-const authorize = require(./authorize);
+const authorize = require("./authorize");
 
 module.exports = { authorize };
