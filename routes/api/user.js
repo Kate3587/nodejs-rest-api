@@ -1,5 +1,6 @@
 const express = require('express');
 const Joi = require('joi');
+const Jimp = require('jimp');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const gravatar = require('gravatar');
@@ -109,14 +110,22 @@ router.get('/current', authorize, async (req, res, next) => {
     }
 })
 
-router.patch('/avatars', authorize, upload.single("avatar"), async (req, res, next) => {
+router.patch('/avatars', authorize, upload, async (req, res, next) => {
     try {
         const { _id } = req.user;
         const { path: tempDir, originalname } = req.file;
         const [extention] = originalname.split(".").reverse();
         const newName = `${_id}.${extention}`;
+
         const uploadDir = path.join(__dirname, "../../", "public", "avatars", newName);
-        await fs.rename(tempDir, uploadDir); 
+        
+        await fs.rename(tempDir, uploadDir);
+
+        Jimp.read(uploadDir, (err, image) => {
+            if (err) throw err;
+            image.resize(250, 250).write(uploadDir);
+        })
+
         const avatarURL = path.join("avatars", newName);
         await User.findByIdAndUpdate(_id, { avatarURL });
         res.status(201).json(avatarURL);
