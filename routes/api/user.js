@@ -44,6 +44,7 @@ router.post("/signup", async (req, res, next) => {
         }
         const hashPassword = await createHashPassword(password);
         const avatarURL = gravatar.url(email);
+
         const newUser = await User.create({ email, password: hashPassword });
         res.status(201).json({
             email: newUser.email,

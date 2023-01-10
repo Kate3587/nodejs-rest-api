@@ -25,6 +25,7 @@ const userSchema = Schema({
     type: String,
     requered: true,
   },
+
 },
     { versionKey: false, timestamps: true }
 )

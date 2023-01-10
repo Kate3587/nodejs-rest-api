@@ -1,4 +1,3 @@
-
 const authorize = require("./authorize");
 const upload = require("./upload");
 
