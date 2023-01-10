@@ -1,10 +1,16 @@
 const express = require('express');
 const Joi = require('joi');
+const Jimp = require('jimp');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const gravatar = require('gravatar');
+const path = require('path');
+const fs = require('fs/promises');
+
 const { createError, createHashPassword } = require('../../helpers');
 const User = require('../../models/user');
 const authorize = require('../../middlewares/authorize');
+const upload = require('../../middlewares/upload');
 
 const registerUserSchema = Joi.object({
     password: Joi.string().min(6).required(),
@@ -37,10 +43,13 @@ router.post("/signup", async (req, res, next) => {
             throw createError(409, "Email in use");
         }
         const hashPassword = await createHashPassword(password);
+        const avatarURL = gravatar.url(email);
+
         const newUser = await User.create({ email, password: hashPassword });
         res.status(201).json({
             email: newUser.email,
             subscription: newUser.subscription,
+            avatarURL,
         });
     } catch (error) {
         next(error);
@@ -98,6 +107,31 @@ router.get('/current', authorize, async (req, res, next) => {
             email,
         }); 
     } catch (error) {
+        next(error);
+    }
+})
+
+router.patch('/avatars', authorize, upload, async (req, res, next) => {
+    try {
+        const { _id } = req.user;
+        const { path: tempDir, originalname } = req.file;
+        const [extention] = originalname.split(".").reverse();
+        const newName = `${_id}.${extention}`;
+
+        const uploadDir = path.join(__dirname, "../../", "public", "avatars", newName);
+        
+        await fs.rename(tempDir, uploadDir);
+
+        Jimp.read(uploadDir, (err, image) => {
+            if (err) throw err;
+            image.resize(250, 250).write(uploadDir);
+        })
+
+        const avatarURL = path.join("avatars", newName);
+        await User.findByIdAndUpdate(_id, { avatarURL });
+        res.status(201).json(avatarURL);
+    } catch (error) {
+        await fs.unlink(req.file.path);
         next(error);
     }
 })
